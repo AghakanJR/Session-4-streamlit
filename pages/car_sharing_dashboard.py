@@ -40,4 +40,22 @@ with col2:
 with col3:
     st.metric(label="Total Distance (km)", value=f"{total_distance:,.2f}")
 
-st.dataframe(trips_merged.head())
+st.header("Visualizing the data")
+
+st.subheader("Trips Over Time")
+trips_over_time = trips_merged.groupby("pickup_date").size()
+st.line_chart(trips_over_time)
+
+st.subheader("Revenue Per Car Model")
+revenue_by_model = trips_merged.groupby("model")["revenue"].sum()
+st.bar_chart(revenue_by_model)
+
+st.subheader("Cumulative Revenue Growth Over Time")
+daily_revenue = trips_merged.groupby("pickup_date")["revenue"].sum()
+cumulative_revenue = daily_revenue.cumsum()
+st.area_chart(cumulative_revenue)
+
+st.subheader("Bonus : Peak Hours (Trips by hour)")
+trips_merged["pickup_hour"] = pd.to_datetime(trips_merged["pickup_time"]).dt.hour
+trips_by_hour = trips_merged["pickup_hour"].value_counts().sort_index()
+st.bar_chart(trips_by_hour)
