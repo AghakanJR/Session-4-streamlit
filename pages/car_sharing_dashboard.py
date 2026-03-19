@@ -41,6 +41,7 @@ with col3:
     st.metric(label="Total Distance (km)", value=f"{total_distance:,.2f}")
 
 st.header("Visualizing the data")
+st.dataframe(trips_merged.head())
 
 st.subheader("Trips Over Time")
 trips_over_time = trips_merged.groupby("pickup_date").size()
