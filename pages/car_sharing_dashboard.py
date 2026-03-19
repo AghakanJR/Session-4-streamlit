@@ -1,5 +1,16 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
+
+st.title("🚗 Car Sharing Performance Dashboard")
+
+st.markdown("""
+Welcome to the central hub for our car sharing operations. 
+This interactive dashboard provides key insights into fleet performance, revenue generation, and user travel patterns. 
+
+👈 **Use the sidebar to filter the data by car brand** and explore the metrics below.
+---
+""")
 
 # Function to load CSV files into dataframes
 @st.cache_data
@@ -22,6 +33,7 @@ trips_merged = trips_merged.drop(columns=["car_id", "city_id", "customer_id","id
 trips_merged["pickup_date"] = pd.to_datetime(trips_merged["pickup_time"]).dt.date
 trips_merged["dropoff_date"] = pd.to_datetime(trips_merged["dropoff_time"]).dt.date
 
+st.sidebar.title("Control Panel")
 cars_brand = st.sidebar.multiselect("Select the Car Brand", trips_merged["brand"].unique())
 if cars_brand:
     trips_merged = trips_merged[trips_merged["brand"].isin(cars_brand)]
@@ -48,9 +60,8 @@ trips_over_time = trips_merged.groupby("pickup_date").size()
 st.line_chart(trips_over_time)
 
 st.subheader("Revenue Per Car Model")
-revenue_by_model = trips_merged.groupby("model")["revenue"].sum()
-st.bar_chart(revenue_by_model)
-
+revenue_by_model_df = trips_merged.groupby("model")["revenue"].sum().reset_index()
+st.bar_chart(data=revenue_by_model_df, x="model", y="revenue", color="model")
 st.subheader("Cumulative Revenue Growth Over Time")
 daily_revenue = trips_merged.groupby("pickup_date")["revenue"].sum()
 cumulative_revenue = daily_revenue.cumsum()
@@ -58,5 +69,13 @@ st.area_chart(cumulative_revenue)
 
 st.subheader("Bonus : Peak Hours (Trips by hour)")
 trips_merged["pickup_hour"] = pd.to_datetime(trips_merged["pickup_time"]).dt.hour
-trips_by_hour = trips_merged["pickup_hour"].value_counts().sort_index()
-st.bar_chart(trips_by_hour)
+trips_by_hour_df = trips_merged['pickup_hour'].value_counts().sort_index().reset_index()
+trips_by_hour_df.columns = ['Hour', 'Trips']
+
+peak_chart = alt.Chart(trips_by_hour_df).mark_bar().encode(
+    x=alt.X('Hour:O', title='Hour of the Day'),
+    y=alt.Y('Trips:Q', title='Number of Trips'),
+    color=alt.Color('Trips:Q', scale=alt.Scale(scheme='greens'), legend=None)
+)
+
+st.altair_chart(peak_chart, use_container_width=True)
